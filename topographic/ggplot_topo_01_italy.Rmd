@@ -1,0 +1,158 @@
+---
+title: "ggplot_topo_01_italy"
+author: "Juan Pablo"
+date: "2023-04-17"
+output: 
+  pdf_document: 
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R topographic map
+
+### Source:
+
+This is a practice from a video from Milos Popovic
+
+> Author: Milos Popovic
+
+> Youtube video: <https://youtu.be/zoLChBALc1k>
+
+> Github: <https://github.com/milos-agathon/create-crisp-topographic-maps-with-r/blob/main/R/main.r>
+
+### Challenges
+
+-   Use raster images
+-   Use `elevatr` to make topographic more realistic with *DEM* data
+
+### Step 1: Setting libraries {#sec-step-1-setting-libraries}
+
+```{r libraries, echo=FALSE}
+{
+  library(elevatr) # DEM data
+  library(giscoR) # geometry data from GISCO
+  library(janitor) # cleaning variables names
+  library(marmap) # to get a color scale for our relief map
+  library(osmdata) # import OpenStreetMap data to crop the raster file
+  library(sf) # simple features objects
+  library(terra) # to make raster map
+  library(tidyverse) # tidy data treatment
+}
+```
+
+### Step 2: Setting options, constants and other global variables {#sec-step-2-setting-options}
+
+#### Setting up Workspace
+
+```{r echo= FALSE}
+#  Cleaning workspace
+rm(list = ls())
+
+# Cleaning console
+cat("\014")
+```
+
+#### Global variables
+
+This variables will make our script more flexible because we can use it for any other country or resolution or another EPSG
+
+```{r}
+country <- "IT"
+cropping_area <- "locations"
+epsg <- "4326"
+resolution_geom <- "10"
+year_geom <- "2020"
+resolution_dem = 9 # from 1 (high-level detail) to 14 (low-level detail)
+```
+
+### Step 3: Getting country geometry {#sec-step-3-getting-country-geometry}
+
+We get the country boundary and make a basic plot for testing purposes.
+
+We get this geometry because is needed for `elevatr` to know the limit of the data to retrieve
+
+```{r}
+country_geom_raw <- giscoR::gisco_get_countries(
+  country = country,
+  epsg = epsg,
+  resolution = resolution_geom,
+  year = year_geom,
+)
+
+country_geom <- country_geom_raw |>
+  clean_names()
+
+country_geom |>
+  ggplot() +
+  geom_sf() +
+  coord_sf()
+
+```
+
+### Step 4: Getting DEM data for the country
+
+In this case, we are going to use the elevation data from elevatr and for the boundaries of the desired country
+
+Using `get_elev_raster` with `locations` we can crop the global elevation data and this could be a:
+
+-   data frame bounding box
+
+-   shape file
+
+-   raster object
+
+In this case, we will pass the shape file of Italy
+
+If we would like to capture the topography of the surrounding countries, then we should define a bounding box in the form of a data frame.
+
+As a `z` argument we used 9 to limit the amount of resources, but we can choose up to 1 higher level resolution if we want.
+
+Finally `clip` is used to crop the data to the passed location
+
+```{r}
+get_elevation_data <- function(location, resolution, cropping_area) {
+  dem <- get_elev_raster(
+    clip = cropping_area,
+    locations = location,
+    z = resolution
+  )
+  # get_elev_raster returns a Rasterlayers
+  # We need to convert this object as a data frame and omit the na data
+  elevation_df <- as.data.frame(dem, xy = TRUE) |>
+    na.omit()
+  colnames(elevation_df)[3] <- "elevation"
+  
+  return(elevation_df)
+}
+
+data_elevation <- get_elevation_data(country_geom, resolution_dem, cropping_area)
+```
+
+```{r}
+# testing
+terra::plot(data_elevation)
+```
+
+```{r}
+save.image("./working_cache/ggplot_topo_01_italy.Rdata")
+```
+
+```{r}
+load("./working_cache/ggplot_topo_01_italy.Rdata")
+```
+
+### Credits {#credits}
+
+#### Packages {#packages}
+
+-   elevatr
+-   giscoR
+-   janitor
+-   marmap
+-   osmdata
+-   sf
+-   terra
+-   tidyverse
