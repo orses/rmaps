@@ -1,5 +1,5 @@
 ---
-title: "ggplot_topo_01_italy"
+title: "ggplot_topo_01_country"
 author: "Juan Pablo"
 date: "2023-04-17"
 output: 
@@ -53,7 +53,11 @@ rm(list = ls())
 
 # Cleaning console
 cat("\014")
+
+# gisco cache
+gisco_set_cache_dir("./cache/giscoR", install = TRUE)
 ```
+
 
 #### Global variables
 
@@ -137,11 +141,11 @@ terra::plot(data_elevation)
 ```
 
 ```{r}
-save.image("./working_cache/ggplot_topo_01_italy.Rdata")
+save.image("./working_cache/ggplot_topo_01_country.Rdata")
 ```
 
 ```{r}
-load("./working_cache/ggplot_topo_01_italy.Rdata")
+load("./working_cache/ggplot_topo_01_country.Rdata")
 ```
 
 ### Credits {#credits}
