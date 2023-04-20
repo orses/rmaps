@@ -58,7 +58,6 @@ cat("\014")
 gisco_set_cache_dir("./cache/giscoR", install = TRUE)
 ```
 
-
 #### Global variables
 
 This variables will make our script more flexible because we can use it for any other country or resolution or another EPSG
@@ -69,7 +68,7 @@ cropping_area <- "locations"
 epsg <- "4326"
 resolution_geom <- "10"
 year_geom <- "2020"
-resolution_dem = 9 # from 1 (high-level detail) to 14 (low-level detail)
+resolution_dem = 7 # from 1 (high-level detail) to 14 (low-level detail)
 ```
 
 ### Step 3: Getting country geometry {#sec-step-3-getting-country-geometry}
@@ -98,38 +97,33 @@ country_geom |>
 
 ### Step 4: Getting DEM data for the country
 
-In this case, we are going to use the elevation data from elevatr and for the boundaries of the desired country
+In this case, we are going to use the \`get_elev_raster\` function from from `elevatr` and for the boundaries of the desired country. Currently, this function provides access to the Amazon Web Services Terrian Tiles and the Open Topography global datasets API. A raster object is returned.
 
-Using `get_elev_raster` with `locations` we can crop the global elevation data and this could be a:
+Using `get_elev_raster` with `locations` we can add a referenced to crop the global elevation data and this could be a:
 
--   data frame bounding box
+-   data frame of x (long) and y (lat) bounding box
 
 -   shape file
 
--   raster object
+-   a sp, sf or raster object
 
-In this case, we will pass the shape file of Italy
+In this case, we will pass the shape file of a country
 
 If we would like to capture the topography of the surrounding countries, then we should define a bounding box in the form of a data frame.
 
-As a `z` argument we used 9 to limit the amount of resources, but we can choose up to 1 higher level resolution if we want.
+As a `z` argument we used 7 to limit the amount of resources, but we can choose from 1 to 14. Higher the level, higher the resolution.
 
 Finally `clip` is used to crop the data to the passed location
 
 ```{r}
 get_elevation_data <- function(location, resolution, cropping_area) {
-  dem <- get_elev_raster(
+  dem <- elevatr::get_elev_raster(
     clip = cropping_area,
     locations = location,
     z = resolution
   )
-  # get_elev_raster returns a Rasterlayers
-  # We need to convert this object as a data frame and omit the na data
-  elevation_df <- as.data.frame(dem, xy = TRUE) |>
-    na.omit()
-  colnames(elevation_df)[3] <- "elevation"
-  
-  return(elevation_df)
+
+  return(dem)
 }
 
 data_elevation <- get_elevation_data(country_geom, resolution_dem, cropping_area)
@@ -141,11 +135,12 @@ terra::plot(data_elevation)
 ```
 
 ```{r}
-save.image("./working_cache/ggplot_topo_01_country.Rdata")
+getwd()
+save.image("../working_cache/ggplot_topo_01_country.Rdata")
 ```
 
 ```{r}
-load("./working_cache/ggplot_topo_01_country.Rdata")
+load("../working_cache/ggplot_topo_01_country.Rdata")
 ```
 
 ### Credits {#credits}
