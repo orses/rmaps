@@ -40,3 +40,5 @@ vignettes/*.pdf
 
 # Personal
 /working_cache
+*/cache/
+*_files
